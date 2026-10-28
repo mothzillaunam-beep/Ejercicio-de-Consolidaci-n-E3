@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Misión Biología Celular - Juego Interactivo</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti para celebración -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #065f46 50%, #0284c7 100%);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #0d9488;
+      border-radius: 8px;
+    }
+    .drop-zone-active {
+      border-color: #0284c7 !important;
+      background-color: #e0f2fe !important;
+    }
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col justify-between gradient-bg">
+
+  <!-- ENCABEZADO Y BARRA DE PROGRESO -->
+  <header class="w-full max-w-6xl mx-auto p-4 sm:p-6">
+    <div class="glass-card rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-emerald-500 text-white p-3 rounded-xl shadow-lg">
+          <i class="fa-solid fa-dna text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Misión: Biología Celular</h1>
+          <p class="text-xs sm:text-sm text-emerald-700 font-semibold">Repaso Interactivo para Secundaria</p>
+        </div>
+      </div>
+
+      <!-- Marcador de Puntos y Progreso -->
+      <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+        <div class="text-center">
+          <span class="text-xs text-slate-500 font-bold uppercase block">Puntuación</span>
+          <span id="score-display" class="text-2xl font-black text-emerald-600">0</span>
+        </div>
+        <div class="text-center">
+          <span class="text-xs text-slate-500 font-bold uppercase block">Insignias</span>
+          <div id="badges-container" class="flex gap-1 text-slate-300 text-lg">
+            <i id="badge-1" class="fa-solid fa-certificate"></i>
+            <i id="badge-2" class="fa-solid fa-certificate"></i>
+            <i id="badge-3" class="fa-solid fa-certificate"></i>
+          </div>
+        </div>
+        <div class="w-28 sm:w-36">
+          <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+            <span>Progreso</span>
+            <span id="progress-percent">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner">
+            <div id="progress-bar" class="bg-gradient-to-r from-emerald-500 to-sky-500 h-3 rounded-full transition-all duration-500 w-0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegador de Niveles -->
+    <nav class="flex justify-center gap-2 sm:gap-4 mt-4">
+      <button id="nav-lvl-1" onclick="switchLevel(1)" class="level-nav-btn active flex-1 sm:flex-initial px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-md bg-emerald-600 text-white transition-all hover:scale-105">
+        <i class="fa-solid fa-list-check mr-1"></i> Nivel 1: Columnas
+      </button>
+      <button id="nav-lvl-2" onclick="switchLevel(2)" class="level-nav-btn flex-1 sm:flex-initial px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-md bg-white/80 text-slate-700 hover:bg-white transition-all hover:scale-105">
+        <i class="fa-solid fa-microscope mr-1"></i> Nivel 2: Células
+      </button>
+      <button id="nav-lvl-3" onclick="switchLevel(3)" class="level-nav-btn flex-1 sm:flex-initial px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-md bg-white/80 text-slate-700 hover:bg-white transition-all hover:scale-105">
+        <i class="fa-solid fa-circle-question mr-1"></i> Nivel 3: Quiz
+      </button>
+    </nav>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL DE CONTENIDO -->
+  <main class="w-full max-w-6xl mx-auto p-4 sm:p-6 flex-grow">
+
+    <!-- ================= NIVEL 1: RELACIÓN DE COLUMNAS ================= -->
+    <section id="level-1" class="glass-card rounded-3xl p-5 sm:p-8 shadow-2xl transition-all">
+      <div class="mb-6 border-b pb-4 flex flex-col md:flex-row justify-between md:items-center gap-2">
+        <div>
+          <span class="bg-emerald-100 text-emerald-800 text-xs font-black uppercase px-3 py-1 rounded-full">Nivel 1</span>
+          <h2 class="text-2xl font-bold text-slate-800 mt-1">Relación de Conceptos Celulares</h2>
+          <p class="text-sm text-slate-600">Haz clic en un concepto de la izquierda y luego en su definición correspondiente a la derecha.</p>
+        </div>
+        <button onclick="resetLevel1()" class="self-start md:self-auto text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg font-semibold transition">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Reiniciar Nivel
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Columna Conceptos -->
+        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+          <h3 class="font-bold text-emerald-800 text-sm uppercase tracking-wider mb-2">Conceptos / Organelos</h3>
+          <div id="concepts-container" class="space-y-2">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+
+        <!-- Columna Definiciones -->
+        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+          <h3 class="font-bold text-sky-800 text-sm uppercase tracking-wider mb-2">Definiciones / Funciones</h3>
+          <div id="definitions-container" class="space-y-2">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= NIVEL 2: IDENTIFICACIÓN VISUAL DE ORGANELOS ================= -->
+    <section id="level-2" class="glass-card rounded-3xl p-5 sm:p-8 shadow-2xl hidden transition-all">
+      <div class="mb-6 border-b pb-4 flex flex-col md:flex-row justify-between md:items-center gap-2">
+        <div>
+          <span class="bg-sky-100 text-sky-800 text-xs font-black uppercase px-3 py-1 rounded-full">Nivel 2</span>
+          <h2 class="text-2xl font-bold text-slate-800 mt-1">Anatomía Celular: Animal vs Vegetal</h2>
+          <p class="text-sm text-slate-600">Selecciona una etiqueta del banco y colócala en el organelo o casilla correspondiente según el diagrama.</p>
+        </div>
+        <button onclick="resetLevel2()" class="self-start md:self-auto text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg font-semibold transition">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Reiniciar Nivel
+        </button>
+      </div>
+
+      <!-- Banco de Etiquetas -->
+      <div class="bg-slate-100 p-4 rounded-2xl mb-6 shadow-inner">
+        <h3 class="text-xs font-bold uppercase text-slate-500 mb-2">Banco de Etiquetas Disponibles:</h3>
+        <div id="labels-bank" class="flex flex-wrap gap-2 justify-center sm:justify-start">
+          <!-- Renderizado dinámico -->
+        </div>
+      </div>
+
+      <!-- Diagrama Ilustrado Interactivo con Canvas/SVG preciso basado en la imagen de referencia -->
+      <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-200 mb-6 flex flex-col items-center">
+        <h3 class="font-extrabold text-slate-700 text-center text-sm uppercase tracking-wider mb-4">Esquema Comparativo Célula Vegetal vs Célula Animal</h3>
+        
+        <!-- Render SVG Réplica Visual de la Imagen -->
+        <div class="w-full max-w-4xl overflow-x-auto">
+          <svg viewBox="0 0 800 450" class="w-full h-auto min-w-[650px] drop-shadow-sm select-none">
+            <!-- Fondo / Línea Divisora -->
+            <line x1="400" y1="20" x2="400" y2="430" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4"/>
+            
+            <!-- TÍTULOS -->
+            <text x="200" y="40" text-anchor="middle" fill="#15803d" font-size="22" font-weight="800">Célula Vegetal</text>
+            <text x="600" y="40" text-anchor="middle" fill="#0369a1" font-size="22" font-weight="800">Célula Animal</text>
+
+            <!-- ================= CÉLULA VEGETAL (IZQUIERDA) ================= -->
+            <g transform="translate(40, 60)">
+              <!-- Pared Celular Hexagonal Verde -->
+              <polygon points="40,20 280,20 330,170 280,320 40,320 -10,170" fill="#dcfce7" stroke="#15803d" stroke-width="12" stroke-linejoin="round"/>
+              <polygon points="45,25 275,25 322,170 275,315 45,315 -2,170" fill="#f0fdf4" stroke="#4ade80" stroke-width="4" stroke-linejoin="round"/>
+              
+              <!-- Citoplasma interno -->
+              <polygon points="50,30 270,30 315,170 270,310 50,310 5,170" fill="#fef9c3" opacity="0.6"/>
+
+              <!-- Vacuola Gigante -->
+              <path d="M 80 120 C 70 80, 150 70, 160 110 C 170 160, 160 250, 120 260 C 80 270, 70 170, 80 120 Z" fill="#bae6fd" stroke="#0284c7" stroke-width="3" opacity="0.85"/>
+
+              <!-- Núcleo con Nucléolo (Morado) -->
+              <g transform="translate(230, 150)">
+                <ellipse cx="0" cy="0" rx="40" ry="40" fill="#c084fc" stroke="#7e22ce" stroke-width="3"/>
+                <circle cx="0" cy="0" r="15" fill="#581c87"/>
+                <!-- Retículo endoplásmico alrededor -->
+                <path d="M -45 -10 Q -55 -30 -35 -45 Q -10 -55 10 -45" stroke="#a855f7" stroke-width="3" fill="none"/>
+              </g>
+
+              <!-- Cloroplastos (Verdes con discos) -->
+              <g transform="translate(60, 240) stroke=#15803d">
+                <ellipse cx="0" cy="0" rx="18" ry="12" fill="#4ade80" stroke="#16a34a" stroke-width="2"/>
+                <line x1="-10" y1="-3" x2="10" y2="-3" stroke="#15803d" stroke-width="2"/>
+                <line x1="-10" y1="3" x2="10" y2="3" stroke="#15803d" stroke-width="2"/>
+              </g>
+              <g transform="translate(180, 280)">
+                <ellipse cx="0" cy="0" rx="18" ry="12" fill="#4ade80" stroke="#16a34a" stroke-width="2"/>
+                <line x1="-10" y1="-3" x2="10" y2="-3" stroke="#15803d" stroke-width="2"/>
+                <line x1="-10" y1="3" x2="10" y2="3" stroke="#15803d" stroke-width="2"/>
+              </g>
+
+              <!-- Mitocondria (Naranja/Marrón) -->
+              <g transform="translate(260, 260) rotate(-20)">
+                <rect x="-20" y="-10" width="40" height="20" rx="10" fill="#fb923c" stroke="#c2410c" stroke-width="2"/>
+                <path d="M -12 0 Q -6 -6 0 0 Q 6 6 12 0" stroke="#7c2d12" stroke-width="2" fill="none"/>
+              </g>
+            </g>
+
+            <!-- ================= CÉLULA ANIMAL (DERECHA) ================= -->
+            <g transform="translate(440, 60)">
+              <!-- Membrana Celular Irregular Móvil/Redondeada -->
+              <path d="M 120 20 C 230 10, 310 70, 320 170 C 330 270, 250 330, 150 330 C 50 320, 10 240, 20 140 C 30 40, 50 30, 120 20 Z" fill="#fef3c7" stroke="#d97706" stroke-width="5"/>
+
+              <!-- Citoplasma interno -->
+              <path d="M 120 25 C 225 15, 305 72, 314 168 C 324 265, 245 323, 150 323 C 55 314, 17 235, 26 140 C 35 45, 53 33, 120 25 Z" fill="#fffbebe6"/>
+
+              <!-- Núcleo Central Grande (Morado) -->
+              <g transform="translate(170, 170)">
+                <circle cx="0" cy="0" r="50" fill="#c084fc" stroke="#7e22ce" stroke-width="3"/>
+                <circle cx="0" cy="0" r="20" fill="#581c87"/>
+                <!-- pliegues -->
+                <path d="M -55 0 C -60 -30, -30 -60, 0 -55" stroke="#a855f7" stroke-width="4" fill="none"/>
+              </g>
+
+              <!-- Vacuola Pequeña (Azul) -->
+              <g transform="translate(230, 60)">
+                <ellipse cx="0" cy="0" rx="15" ry="10" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+              </g>
+
+              <!-- Mitocondrias (Varias) -->
+              <g transform="translate(70, 190) rotate(30)">
+                <rect x="-20" y="-10" width="40" height="20" rx="10" fill="#fb923c" stroke="#c2410c" stroke-width="2"/>
+                <path d="M -12 0 Q -6 -6 0 0 Q 6 6 12 0" stroke="#7c2d12" stroke-width="2" fill="none"/>
+              </g>
+              <g transform="translate(250, 240) rotate(-40)">
+                <rect x="-20" y="-10" width="40" height="20" rx="10" fill="#fb923c" stroke="#c2410c" stroke-width="2"/>
+                <path d="M -12 0 Q -6 -6 0 0 Q 6 6 12 0" stroke="#7c2d12" stroke-width="2" fill="none"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Tabla interactiva de colocación de organelos según el esquema -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- CÉLULA VEGETAL -->
+        <div class="bg-emerald-50/80 border-2 border-emerald-200 rounded-2xl p-4">
+          <h3 class="text-emerald-800 font-extrabold text-sm uppercase mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-seedling"></i> Organelos Célula Vegetal
+          </h3>
+
+          <div class="space-y-2">
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Pared Celular" data-cell="vegetal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-vector-square text-emerald-600 mr-1"></i> Cubierta externa rígida (verde):</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Cloroplasto" data-cell="vegetal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-leaf text-green-500 mr-1"></i> Organelo verde fotosintético:</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Vacuola" data-cell="vegetal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-droplet text-sky-500 mr-1"></i> Vacuola de gran tamaño (almacén):</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Núcleo" data-cell="vegetal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-circle-dot text-purple-600 mr-1"></i> Núcleo con material genético:</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CÉLULA ANIMAL -->
+        <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-4">
+          <h3 class="text-amber-800 font-extrabold text-sm uppercase mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-paw"></i> Organelos Célula Animal
+          </h3>
+
+          <div class="space-y-2">
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Membrana Celular" data-cell="animal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-shield-halved text-amber-600 mr-1"></i> Membrana celular flexible:</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Mitocondria" data-cell="animal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-bolt text-orange-500 mr-1"></i> Mitocondria (respiración/energía):</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="Citoplasma" data-cell="animal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-water text-yellow-600 mr-1"></i> Citoplasma (medio acuoso interior):</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+
+            <div class="cell-dropzone flex items-center justify-between p-2 bg-white rounded-xl border-2 border-dashed border-slate-300" data-target="ADN" data-cell="animal">
+              <span class="text-xs font-bold text-slate-600"><i class="fa-solid fa-dna text-purple-600 mr-1"></i> ADN contenido en el núcleo:</span>
+              <div class="zone-target min-w-[130px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border">Vacío</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= NIVEL 3: QUIZ DIGITAL INTERACTIVO ================= -->
+    <section id="level-3" class="glass-card rounded-3xl p-5 sm:p-8 shadow-2xl hidden transition-all">
+      <div class="mb-6 border-b pb-4 flex justify-between items-center">
+        <div>
+          <span class="bg-purple-100 text-purple-800 text-xs font-black uppercase px-3 py-1 rounded-full">Nivel 3</span>
+          <h2 class="text-2xl font-bold text-slate-800 mt-1">Desafío Final: Quiz Celular</h2>
+          <p class="text-sm text-slate-600">Demuestra tus conocimientos respondiendo las siguientes preguntas.</p>
+        </div>
+        <span id="quiz-tracker" class="text-sm font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg border border-purple-200">Pregunta 1/6</span>
+      </div>
+
+      <div class="max-w-2xl mx-auto">
+        <!-- Tarjeta de Pregunta -->
+        <div id="quiz-card" class="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+          <h3 id="quiz-question" class="text-lg sm:text-xl font-bold text-slate-800 mb-6">
+            Cargando pregunta...
+          </h3>
+
+          <!-- Opciones -->
+          <div id="quiz-options" class="space-y-3">
+            <!-- Renderizado dinámico -->
+          </div>
+
+          <!-- Explicación/Retroalimentación -->
+          <div id="quiz-feedback" class="mt-6 p-4 rounded-xl hidden transition-all">
+            <p id="feedback-text" class="text-sm font-medium"></p>
+            <button id="next-question-btn" onclick="nextQuestion()" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2 rounded-xl text-sm transition shadow-lg">
+              Siguiente Pregunta <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PANTALLA FINAL / CERTIFICADO ================= -->
+    <section id="certificate-screen" class="glass-card rounded-3xl p-6 sm:p-10 shadow-2xl hidden text-center max-w-3xl mx-auto">
+      <div class="inline-block p-4 bg-emerald-100 text-emerald-600 rounded-full mb-4 animate-bounce">
+        <i class="fa-solid fa-award text-5xl"></i>
+      </div>
+      <h2 class="text-3xl font-black text-slate-800 mb-2">¡Felicitaciones, Biólogo/a Celular!</h2>
+      <p class="text-slate-600 mb-6">Has completado con éxito todos los niveles de la actividad de consolidación.</p>
+
+      <!-- Diploma Simbólico -->
+      <div id="printable-certificate" class="bg-gradient-to-br from-amber-50 to-orange-50 border-8 border-amber-200 rounded-2xl p-6 sm:p-8 text-slate-800 shadow-inner relative overflow-hidden mb-6">
+        <div class="absolute -right-10 -bottom-10 opacity-10 text-amber-900 text-9xl">
+          <i class="fa-solid fa-microscope"></i>
+        </div>
+        <h3 class="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-1">Certificado de Logro Científico</h3>
+        <h4 class="text-2xl sm:text-3xl font-black text-slate-800 mb-4 font-serif">Conocimiento en Biología Celular</h4>
+        
+        <p class="text-sm text-slate-600 mb-2">Otorgado al estudiante por dominar los conceptos de:</p>
+        <p class="text-xs font-semibold text-slate-500 max-w-lg mx-auto mb-6">
+          Unicelular, Pluricelular, Procariota, Eucariota, Animal, Vegetal, Mitocondria, Cloroplasto, Pared Celular, Membrana Celular, Núcleo, ADN, Vacuola, Organelos, Citoplasma y Teoría Endosimbiótica.
+        </p>
+
+        <div class="flex justify-around items-center border-t border-amber-200 pt-4 mt-4">
+          <div>
+            <span class="block text-xs text-slate-400 font-bold uppercase">Calificación Final</span>
+            <span id="final-score-badge" class="text-2xl font-black text-emerald-600">100%</span>
+          </div>
+          <div>
+            <span class="block text-xs text-slate-400 font-bold uppercase">Nivel Alcanzado</span>
+            <span class="text-sm font-bold text-amber-600">Experto/a en Citología</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-4">
+        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-print"></i> Imprimir / Guardar Diploma
+        </button>
+        <button onclick="restartGame()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-rotate-right"></i> Jugar de Nuevo
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PIE DE PÁGINA -->
+  <footer class="w-full max-w-6xl mx-auto p-4 text-center text-xs text-white/80">
+    <p>Actividad Interactiva de Biología Celular • Nivel Secundaria</p>
+  </footer>
+
+  <!-- SCRIPT LOGICA DEL JUEGO -->
+  <script>
+    // ================= DATOS Y ESTADO DEL JUEGO =================
+    
+    // Nivel 1: Conceptos y Definiciones
+    const level1Data = [
+      { id: '1', concept: 'Unicelular', def: 'Organismo formado por una sola célula independiente (ej. bacterias, amebas).' },
+      { id: '2', concept: 'Pluricelular', def: 'Organismo constituido por múltiples células especializadas (ej. plantas, animales).' },
+      { id: '3', concept: 'Procariota', def: 'Célula simple sin núcleo definido; su ADN está libre en el citoplasma.' },
+      { id: '4', concept: 'Eucariota', def: 'Célula compleja con núcleo rodeado por membrana que protege el ADN.' },
+      { id: '5', concept: 'Pared Celular', def: 'Estructura rígida externa que da soporte y protección en vegetales y bacterias.' },
+      { id: '6', concept: 'Membrana Celular', def: 'Barrera semipermeable que delimita la célula y regula el transporte de sustancias.' },
+      { id: '7', concept: 'Núcleo', def: 'Organelo principal que alberga el ADN y dirige las actividades celulares.' },
+      { id: '8', concept: 'Mitocondria', def: 'Organelo responsable de la respiración celular y producción de energía (ATP).' },
+      { id: '9', concept: 'Cloroplasto', def: 'Organelo vegetal que contiene clorofila y realiza la fotosíntesis.' },
+      { id: '10', concept: 'Vacuola', def: 'Vesícula de almacenamiento de agua y nutrientes, muy grande en células vegetales.' },
+      { id: '11', concept: 'Endosimbiosis', def: 'Teoría que explica el origen de mitocondrias y cloroplastos a partir de bacterias englobadas.' },
+      { id: '12', concept: 'Citoplasma', def: 'Sustancia gelatinosa donde se encuentran suspendidos los organelos.' },
+      { id: '13', concept: 'ADN', def: 'Molécula que contiene las instrucciones genéticas heredables del ser vivo.' },
+      { id: '14', concept: 'Organelos', def: 'Estructuras especializadas dentro de la célula que cumplen funciones específicas.' }
+    ];
+
+    // Nivel 2: Etiquetas disponibles
+    const level2Labels = [
+      'Núcleo', 'Mitocondria', 'Membrana Celular', 'Citoplasma',
+      'Pared Celular', 'Cloroplasto', 'Vacuola', 'ADN'
+    ];
+
+    // Nivel 3: Quiz Preguntas
+    const quizQuestions = [
+      {
+        question: '¿Qué tipo de célula no posee un núcleo delimitado por membrana y tiene su ADN libre?',
+        options: ['Eucariota', 'Procariota', 'Pluricelular', 'Vegetal'],
+        correct: 1,
+        explanation: 'Las células procariotas (como las bacterias) no tienen núcleo definido; su ADN se encuentra disperso en el citoplasma.'
+      },
+      {
+        question: '¿Qué organelo exclusivo de las células vegetales realiza la fotosíntesis utilizando luz solar?',
+        options: ['Mitocondria', 'Vacuola', 'Cloroplasto', 'Pared Celular'],
+        correct: 2,
+        explanation: 'Los cloroplastos contienen clorofila, el pigmento verde encargado de captar la luz para producir alimento (glucosa).'
+      },
+      {
+        question: 'La Teoría de la Endosimbiosis propone que las mitocondrias y cloroplastos surgieron a partir de:',
+        options: ['Virus primitivos', 'Bacterias libres englobadas por células más grandes', 'Fragmentos de pared celular', 'Proteínas sintetizadas en el núcleo'],
+        correct: 1,
+        explanation: 'Propuesta por Lynn Margulis, señala que antiguos procariontes habitaron dentro de otros más grandes, evolucionando en mitocondrias y cloroplastos.'
+      },
+      {
+        question: '¿Cuál es la función principal de la Mitocondria?',
+        options: ['Sintetizar ADN', 'Almacenar agua', 'Realizar la respiración celular para obtener energía', 'Proteger el exterior de la célula'],
+        correct: 2,
+        explanation: 'La mitocondria es la "central energética" de la célula eucariota, produciendo ATP mediante la respiración celular.'
+      },
+      {
+        question: 'Si observas al microscopio una célula con pared celular rígida, una gran vacuola central y cloroplastos, se trata de una:',
+        options: ['Célula Animal', 'Célula Vegetal', 'Célula Procariota', 'Bacteria'],
+        correct: 1,
+        explanation: 'Estas tres estructuras (pared celular de celulosa, gran vacuola central y cloroplastos) son distintivas de las células vegetales.'
+      },
+      {
+        question: 'Organismo formado por una sola célula que realiza todas las funciones vitales:',
+        options: ['Pluricelular', 'Multicelular', 'Unicelular', 'Tejido'],
+        correct: 2,
+        explanation: 'Los seres unicelulares (como paramecios o bacterias) consisten en una sola célula autosuficiente.'
+      }
+    ];
+
+    // Estado del juego
+    let gameState = {
+      score: 0,
+      completedLvl1: 0,
+      totalLvl1: level1Data.length,
+      completedLvl2: 0,
+      totalLvl2: 8,
+      quizIndex: 0,
+      quizScore: 0,
+      selectedConcept: null,
+      selectedLabel: null,
+      badges: [false, false, false]
+    };
+
+    // ================= INICIALIZACIÓN =================
+    window.onload = () => {
+      initLevel1();
+      initLevel2();
+      initLevel3();
+      updateProgress();
+    };
+
+    function updateProgress() {
+      // Cálculo de progreso total
+      const totalTasks = gameState.totalLvl1 + gameState.totalLvl2 + quizQuestions.length;
+      const completedTasks = gameState.completedLvl1 + gameState.completedLvl2 + gameState.quizIndex;
+      const percent = Math.min(100, Math.round((completedTasks / totalTasks) * 100));
+
+      document.getElementById('progress-bar').style.width = `${percent}%`;
+      document.getElementById('progress-percent').innerText = `${percent}%`;
+      document.getElementById('score-display').innerText = gameState.score;
+
+      // Actualizar Insignias
+      if (gameState.completedLvl1 === gameState.totalLvl1 && !gameState.badges[0]) {
+        gameState.badges[0] = true;
+        document.getElementById('badge-1').className = "fa-solid fa-certificate text-emerald-500 animate-bounce";
+      }
+      if (gameState.completedLvl2 === gameState.totalLvl2 && !gameState.badges[1]) {
+        gameState.badges[1] = true;
+        document.getElementById('badge-2').className = "fa-solid fa-certificate text-sky-500 animate-bounce";
+      }
+      if (gameState.quizIndex === quizQuestions.length && !gameState.badges[2]) {
+        gameState.badges[2] = true;
+        document.getElementById('badge-3').className = "fa-solid fa-certificate text-purple-500 animate-bounce";
+      }
+
+      // Verificar si completó todo
+      if (percent === 100) {
+        setTimeout(showCertificate, 800);
+      }
+    }
+
+    // Cambiar de Nivel
+    function switchLevel(lvl) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.querySelectorAll('.level-nav-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white');
+        btn.classList.add('bg-white/80', 'text-slate-700');
+      });
+
+      const activeBtn = document.getElementById(`nav-lvl-${lvl}`);
+      activeBtn.classList.remove('bg-white/80', 'text-slate-700');
+      activeBtn.classList.add('bg-emerald-600', 'text-white');
+
+      document.getElementById(`level-${lvl}`).classList.remove('hidden');
+    }
+
+    // ================= LÓGICA NIVEL 1: RELACIÓN DE COLUMNAS =================
+    function initLevel1() {
+      const conceptsContainer = document.getElementById('concepts-container');
+      const defsContainer = document.getElementById('definitions-container');
+
+      conceptsContainer.innerHTML = '';
+      defsContainer.innerHTML = '';
+
+      // Desordenar arreglos
+      const shuffledConcepts = [...level1Data].sort(() => Math.random() - 0.5);
+      const shuffledDefs = [...level1Data].sort(() => Math.random() - 0.5);
+
+      shuffledConcepts.forEach(item => {
+        const btn = document.createElement('button');
+        btn.id = `concept-${item.id}`;
+        btn.className = `concept-btn w-full text-left p-3 rounded-xl font-bold text-xs sm:text-sm bg-white border border-slate-200 shadow-sm hover:border-emerald-400 transition flex justify-between items-center`;
+        btn.innerHTML = `<span>${item.concept}</span> <i class="fa-solid fa-chevron-right text-slate-300"></i>`;
+        btn.onclick = () => selectConcept(item.id);
+        conceptsContainer.appendChild(btn);
+      });
+
+      shuffledDefs.forEach(item => {
+        const btn = document.createElement('button');
+        btn.id = `def-${item.id}`;
+        btn.className = `def-btn w-full text-left p-3 rounded-xl text-xs sm:text-sm bg-white border border-slate-200 shadow-sm hover:border-sky-400 transition`;
+        btn.innerText = item.def;
+        btn.onclick = () => selectDefinition(item.id);
+        defsContainer.appendChild(btn);
+      });
+    }
+
+    function selectConcept(id) {
+      // Limpiar selección previa
+      document.querySelectorAll('.concept-btn').forEach(b => b.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50'));
+      
+      const btn = document.getElementById(`concept-${id}`);
+      if (btn.disabled) return;
+
+      gameState.selectedConcept = id;
+      btn.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+    }
+
+    function selectDefinition(id) {
+      if (!gameState.selectedConcept) return;
+
+      const conceptBtn = document.getElementById(`concept-${gameState.selectedConcept}`);
+      const defBtn = document.getElementById(`def-${id}`);
+
+      if (gameState.selectedConcept === id) {
+        // Correcto!
+        conceptBtn.className = "w-full text-left p-3 rounded-xl font-bold text-xs sm:text-sm bg-emerald-100 border-2 border-emerald-500 text-emerald-800 shadow-sm cursor-default flex justify-between items-center";
+        conceptBtn.innerHTML += ` <i class="fa-solid fa-check text-emerald-600"></i>`;
+        conceptBtn.disabled = true;
+
+        defBtn.className = "w-full text-left p-3 rounded-xl text-xs sm:text-sm bg-emerald-100 border-2 border-emerald-500 text-emerald-800 shadow-sm cursor-default";
+        defBtn.disabled = true;
+
+        gameState.score += 10;
+        gameState.completedLvl1++;
+        gameState.selectedConcept = null;
+        updateProgress();
+      } else {
+        // Incorrecto
+        defBtn.classList.add('bg-rose-100', 'border-rose-400');
+        setTimeout(() => {
+          defBtn.classList.remove('bg-rose-100', 'border-rose-400');
+        }, 600);
+      }
+    }
+
+    function resetLevel1() {
+      gameState.completedLvl1 = 0;
+      gameState.selectedConcept = null;
+      initLevel1();
+      updateProgress();
+    }
+
+    // ================= LÓGICA NIVEL 2: ANATOMÍA CELULAR =================
+    function initLevel2() {
+      const bank = document.getElementById('labels-bank');
+      bank.innerHTML = '';
+
+      // Desordenar etiquetas
+      const shuffled = [...level2Labels].sort(() => Math.random() - 0.5);
+
+      shuffled.forEach(label => {
+        const lblBtn = document.createElement('button');
+        lblBtn.className = 'label-btn bg-white border-2 border-sky-400 text-sky-800 font-bold px-3 py-2 rounded-xl text-xs shadow hover:bg-sky-50 transition cursor-pointer';
+        lblBtn.innerText = label;
+        lblBtn.onclick = () => selectLabel(label, lblBtn);
+        bank.appendChild(lblBtn);
+      });
+
+      // Configurar dropzones
+      document.querySelectorAll('.cell-dropzone').forEach(zone => {
+        zone.onclick = () => dropLabelInZone(zone);
+      });
+    }
+
+    function selectLabel(label, btnElement) {
+      document.querySelectorAll('.label-btn').forEach(b => b.classList.remove('ring-4', 'ring-sky-300', 'scale-105'));
+      gameState.selectedLabel = { name: label, element: btnElement };
+      btnElement.classList.add('ring-4', 'ring-sky-300', 'scale-105');
+    }
+
+    function dropLabelInZone(zone) {
+      if (!gameState.selectedLabel) return;
+
+      const target = zone.getAttribute('data-target');
+      const targetBox = zone.querySelector('.zone-target');
+
+      if (gameState.selectedLabel.name === target) {
+        // Acierto!
+        targetBox.innerText = target;
+        targetBox.className = "zone-target min-w-[120px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-emerald-500 text-white rounded-lg p-1 shadow animate-pulse";
+        zone.onclick = null; // Desactivar zona
+        
+        gameState.selectedLabel.element.remove(); // Eliminar del banco
+        gameState.selectedLabel = null;
+
+        gameState.score += 15;
+        gameState.completedLvl2++;
+        updateProgress();
+      } else {
+        // Error
+        targetBox.classList.add('bg-rose-200', 'text-rose-800');
+        setTimeout(() => {
+          targetBox.classList.remove('bg-rose-200', 'text-rose-800');
+        }, 600);
+      }
+    }
+
+    function resetLevel2() {
+      gameState.completedLvl2 = 0;
+      gameState.selectedLabel = null;
+      document.querySelectorAll('.zone-target').forEach(box => {
+        box.innerText = "Vacío";
+        box.className = "zone-target min-w-[120px] min-h-[32px] flex items-center justify-center text-xs font-bold bg-slate-50 rounded-lg p-1 border";
+      });
+      initLevel2();
+      updateProgress();
+    }
+
+    // ================= LÓGICA NIVEL 3: QUIZ DIGITAL =================
+    function initLevel3() {
+      loadQuizQuestion();
+    }
+
+    function loadQuizQuestion() {
+      const q = quizQuestions[gameState.quizIndex];
+      document.getElementById('quiz-tracker').innerText = `Pregunta ${gameState.quizIndex + 1}/${quizQuestions.length}`;
+      document.getElementById('quiz-question').innerText = q.question;
+      
+      const optionsContainer = document.getElementById('quiz-options');
+      optionsContainer.innerHTML = '';
+      document.getElementById('quiz-feedback').classList.add('hidden');
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-purple-400 hover:bg-purple-50 transition text-sm font-semibold text-slate-700 flex items-center gap-3";
+        btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold">${String.fromCharCode(65 + idx)}</span> ${opt}`;
+        btn.onclick = () => checkAnswer(idx);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selectedIdx) {
+      const q = quizQuestions[gameState.quizIndex];
+      const buttons = document.querySelectorAll('.option-btn');
+      const feedback = document.getElementById('quiz-feedback');
+      const feedbackText = document.getElementById('feedback-text');
+
+      buttons.forEach(b => b.disabled = true);
+
+      if (selectedIdx === q.correct) {
+        buttons[selectedIdx].className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-100 text-emerald-900 font-bold text-sm flex items-center gap-3";
+        feedback.className = "mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800";
+        feedbackText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-2 text-lg"></i> <strong>¡Correcto!</strong> ${q.explanation}`;
+        gameState.score += 20;
+        gameState.quizScore++;
+      } else {
+        buttons[selectedIdx].className = "w-full text-left p-4 rounded-xl border-2 border-rose-500 bg-rose-100 text-rose-900 font-bold text-sm flex items-center gap-3";
+        buttons[q.correct].className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-bold text-sm flex items-center gap-3";
+        feedback.className = "mt-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800";
+        feedbackText.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600 mr-2 text-lg"></i> <strong>Incorrecto.</strong> ${q.explanation}`;
+      }
+
+      feedback.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      gameState.quizIndex++;
+      updateProgress();
+
+      if (gameState.quizIndex < quizQuestions.length) {
+        loadQuizQuestion();
+      } else {
+        // Fin del quiz
+        document.getElementById('quiz-card').innerHTML = `
+          <div class="text-center py-8">
+            <i class="fa-solid fa-flag-checkered text-5xl text-purple-600 mb-4"></i>
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">¡Quiz Completado!</h3>
+            <p class="text-slate-600">Obtuviste ${gameState.quizScore} de ${quizQuestions.length} respuestas correctas.</p>
+          </div>
+        `;
+      }
+    }
+
+    // ================= CERTIFICADO Y FINALIZACIÓN =================
+    function showCertificate() {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById('certificate-screen').classList.remove('hidden');
+
+      // Calcular Porcentaje
+      const maxPossibleScore = (gameState.totalLvl1 * 10) + (gameState.totalLvl2 * 15) + (quizQuestions.length * 20);
+      const finalPercent = Math.round((gameState.score / maxPossibleScore) * 100);
+
+      document.getElementById('final-score-badge').innerText = `${finalPercent}%`;
+
+      // Efecto Confeti
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function restartGame() {
+      gameState = {
+        score: 0,
+        completedLvl1: 0,
+        totalLvl1: level1Data.length,
+        completedLvl2: 0,
+        totalLvl2: 8,
+        quizIndex: 0,
+        quizScore: 0,
+        selectedConcept: null,
+        selectedLabel: null,
+        badges: [false, false, false]
+      };
+
+      document.querySelectorAll('.fa-certificate').forEach(b => b.className = "fa-solid fa-certificate text-slate-300");
+      
+      initLevel1();
+      initLevel2();
+      initLevel3();
+      switchLevel(1);
+      updateProgress();
+    }
+  </script>
+</body>
+</html>
